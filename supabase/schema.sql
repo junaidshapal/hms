@@ -39,6 +39,7 @@ create table if not exists public.availability (
   start_time  time not null,
   end_time    time not null,
   is_booked   boolean not null default false,
+  slot_type   text not null default 'regular' check (slot_type in ('regular', 'break')),
   created_at  timestamptz not null default now(),
   constraint  availability_time_order check (start_time < end_time),
   constraint  availability_unique_slot unique (doctor_id, date, start_time)
@@ -46,6 +47,8 @@ create table if not exists public.availability (
 
 create index if not exists availability_doctor_date_idx
   on public.availability (doctor_id, date);
+create index if not exists availability_slot_type_idx
+  on public.availability (slot_type);
 
 create table if not exists public.appointments (
   id              uuid primary key default gen_random_uuid(),
@@ -107,6 +110,7 @@ declare
   v_role          text;
   v_doctor_id     uuid;
   v_is_booked     boolean;
+  v_slot_type     text;
   v_existing      uuid;
   v_appointment   uuid;
 begin
@@ -119,14 +123,18 @@ begin
     raise exception 'Only patients can book appointments';
   end if;
 
-  select doctor_id, is_booked
-    into v_doctor_id, v_is_booked
+  select doctor_id, is_booked, slot_type
+    into v_doctor_id, v_is_booked, v_slot_type
     from public.availability
    where id = p_availability_id
    for update;
 
   if v_doctor_id is null then
     raise exception 'Slot not found';
+  end if;
+
+  if v_slot_type = 'break' then
+    raise exception 'Break windows cannot be booked';
   end if;
 
   if v_is_booked then

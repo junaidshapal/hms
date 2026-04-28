@@ -58,6 +58,7 @@ export type Database = {
           start_time: string;
           end_time: string;
           is_booked: boolean;
+          slot_type: "regular" | "break";
           created_at: string;
         };
         Insert: {
@@ -67,6 +68,7 @@ export type Database = {
           start_time: string;
           end_time: string;
           is_booked?: boolean;
+          slot_type?: "regular" | "break";
           created_at?: string;
         };
         Update: Partial<{
@@ -74,6 +76,7 @@ export type Database = {
           start_time: string;
           end_time: string;
           is_booked: boolean;
+          slot_type: "regular" | "break";
         }>;
         Relationships: [];
       };

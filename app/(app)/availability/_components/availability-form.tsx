@@ -1,9 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { differenceInCalendarDays, format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import type { DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import { CalendarIcon, Coffee, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -27,6 +26,8 @@ import {
   type AvailabilityState,
 } from "@/app/actions/availability";
 
+type Break = { start: string; end: string };
+
 const startOfToday = () => {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -35,21 +36,11 @@ const startOfToday = () => {
 
 const toIsoDate = (d: Date) => format(d, "yyyy-MM-dd");
 
-function rangeLabel(range: DateRange | undefined): string {
-  if (!range?.from) return "Pick a date or range";
-  if (!range.to || toIsoDate(range.from) === toIsoDate(range.to)) {
-    return format(range.from, "PPP");
-  }
-  return `${format(range.from, "MMM d, yyyy")} → ${format(range.to, "MMM d, yyyy")}`;
-}
-
 export function AvailabilityForm() {
   const formRef = useRef<HTMLFormElement>(null);
-  const [range, setRange] = useState<DateRange | undefined>(() => {
-    const t = startOfToday();
-    return { from: t, to: t };
-  });
+  const [date, setDate] = useState<Date | undefined>(() => startOfToday());
   const [open, setOpen] = useState(false);
+  const [breaks, setBreaks] = useState<Break[]>([]);
   const [state, action, pending] = useActionState<AvailabilityState, FormData>(
     createAvailabilitySlots,
     undefined,
@@ -60,30 +51,27 @@ export function AvailabilityForm() {
     if (state.ok) {
       toast.success(`Created ${state.created} slot${state.created === 1 ? "" : "s"}.`);
       formRef.current?.reset();
-      const t = startOfToday();
-      setRange({ from: t, to: t });
+      setDate(startOfToday());
+      setBreaks([]);
     } else {
       toast.error(state.error);
     }
   }, [state]);
 
-  const fromIso = range?.from ? toIsoDate(range.from) : "";
-  const toIso = range?.to
-    ? toIsoDate(range.to)
-    : range?.from
-    ? toIsoDate(range.from)
-    : "";
-  const dayCount =
-    range?.from && range?.to
-      ? differenceInCalendarDays(range.to, range.from) + 1
-      : range?.from
-      ? 1
-      : 0;
+  function addBreak() {
+    setBreaks((b) => [...b, { start: "12:00", end: "13:00" }]);
+  }
+  function removeBreak(idx: number) {
+    setBreaks((b) => b.filter((_, i) => i !== idx));
+  }
+  function updateBreak(idx: number, key: keyof Break, value: string) {
+    setBreaks((b) => b.map((row, i) => (i === idx ? { ...row, [key]: value } : row)));
+  }
 
   return (
     <form ref={formRef} action={action} className="grid gap-4">
       <div className="grid gap-1.5">
-        <Label htmlFor="date-trigger">Dates</Label>
+        <Label htmlFor="date-trigger">Date</Label>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -92,43 +80,30 @@ export function AvailabilityForm() {
               variant="outline"
               className={cn(
                 "w-full justify-start text-left font-normal",
-                !range?.from && "text-muted-foreground",
+                !date && "text-muted-foreground",
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              <span className="truncate">{rangeLabel(range)}</span>
+              {date ? format(date, "PPP") : "Pick a date"}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
-              mode="range"
-              numberOfMonths={2}
-              selected={range}
-              onSelect={setRange}
+              mode="single"
+              selected={date}
+              onSelect={(d) => {
+                if (d) {
+                  setDate(d);
+                  setOpen(false);
+                }
+              }}
               disabled={(d) => d < startOfToday()}
               captionLayout="dropdown"
               className="rounded-lg border"
             />
-            <div className="flex items-center justify-between border-t bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              <span>
-                {dayCount > 0
-                  ? `${dayCount} day${dayCount === 1 ? "" : "s"} selected`
-                  : "Click a day, or drag to select a range"}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setOpen(false)}
-                disabled={!range?.from}
-              >
-                Done
-              </Button>
-            </div>
           </PopoverContent>
         </Popover>
-        <input type="hidden" name="from_date" value={fromIso} />
-        <input type="hidden" name="to_date" value={toIso} />
+        <input type="hidden" name="date" value={date ? toIsoDate(date) : ""} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -158,12 +133,68 @@ export function AvailabilityForm() {
         </Select>
       </div>
 
-      <Button type="submit" disabled={pending || dayCount === 0}>
-        {pending
-          ? "Adding…"
-          : dayCount > 1
-          ? `Add slots for ${dayCount} days`
-          : "Add slots"}
+      {/* Breaks */}
+      <div className="grid gap-2 rounded-lg border bg-muted/20 p-3">
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-1.5 text-sm">
+            <Coffee className="h-3.5 w-3.5" />
+            Breaks
+            <span className="font-normal text-muted-foreground">(optional)</span>
+          </Label>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={addBreak}
+            className="h-7 gap-1 text-xs"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add break
+          </Button>
+        </div>
+
+        {breaks.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No breaks. Add one to skip a time window (e.g., lunch 12–1 PM).
+          </p>
+        ) : (
+          <div className="grid gap-2">
+            {breaks.map((b, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <div className="flex-1">
+                  <TimeSelect
+                    name={`break_start_${idx}`}
+                    defaultValue={b.start}
+                    onValueChange={(v) => updateBreak(idx, "start", v)}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">to</span>
+                <div className="flex-1">
+                  <TimeSelect
+                    name={`break_end_${idx}`}
+                    defaultValue={b.end}
+                    onValueChange={(v) => updateBreak(idx, "end", v)}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeBreak(idx)}
+                  aria-label="Remove break"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+        <input type="hidden" name="breaks" value={JSON.stringify(breaks)} />
+      </div>
+
+      <Button type="submit" disabled={pending || !date}>
+        {pending ? "Adding…" : "Add slots"}
       </Button>
     </form>
   );

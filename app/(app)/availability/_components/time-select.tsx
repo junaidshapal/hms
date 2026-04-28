@@ -24,19 +24,28 @@ export function TimeSelect({
   name,
   id,
   defaultValue,
+  value,
+  onValueChange,
 }: {
-  name: string;
+  name?: string;
   id?: string;
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }) {
   return (
-    <Select name={name} defaultValue={defaultValue}>
+    <Select
+      name={name}
+      defaultValue={value === undefined ? defaultValue : undefined}
+      value={value}
+      onValueChange={onValueChange}
+    >
       <SelectTrigger id={id} className="w-full">
         <SelectValue placeholder="Select time" />
       </SelectTrigger>
       <SelectContent className="max-h-56">
-        {TIMES.map(({ value, label }) => (
-          <SelectItem key={value} value={value} className="text-sm">
+        {TIMES.map(({ value: v, label }) => (
+          <SelectItem key={v} value={v} className="text-sm">
             {label}
           </SelectItem>
         ))}

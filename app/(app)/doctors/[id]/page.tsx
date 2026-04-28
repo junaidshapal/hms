@@ -60,6 +60,7 @@ export default async function DoctorDetailPage({
     .from("availability")
     .select("id, date, start_time, end_time, is_booked")
     .eq("doctor_id", id)
+    .eq("slot_type", "regular")
     .gte("date", today)
     .order("date")
     .order("start_time");
