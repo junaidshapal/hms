@@ -226,7 +226,7 @@ export function SlotsBoard({ days }: { days: Array<[string, SlotsBoardSlot[]]> }
             </CardHeader>
             <Separator />
             <CardContent className="p-3 sm:p-4">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {daySlots.map((s) => (
                   <SlotChip
                     key={s.id}
@@ -264,8 +264,9 @@ function SlotChip({
       <div className="group relative flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-500/30 dark:bg-amber-500/10">
         <div className="flex min-w-0 items-center gap-2">
           <Coffee className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <span className="truncate font-medium text-amber-900 dark:text-amber-200">
-            Break <span className="font-normal tabular-nums">
+          <span className="whitespace-nowrap font-medium text-amber-900 dark:text-amber-200">
+            Break{" "}
+            <span className="font-normal tabular-nums">
               {formatRange(slot.start_time, slot.end_time)}
             </span>
           </span>
@@ -293,7 +294,7 @@ function SlotChip({
       <div className="group relative flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
         <div className="flex min-w-0 items-center gap-2">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <span className="truncate font-medium tabular-nums text-emerald-900 dark:text-emerald-200">
+          <span className="whitespace-nowrap font-medium tabular-nums text-emerald-900 dark:text-emerald-200">
             {formatRange(slot.start_time, slot.end_time)}
           </span>
         </div>
@@ -328,7 +329,7 @@ function SlotChip({
         ) : (
           <Circle className="h-2 w-2 shrink-0 fill-current text-primary" />
         )}
-        <span className="truncate font-medium tabular-nums">
+        <span className="whitespace-nowrap font-medium tabular-nums">
           {formatRange(slot.start_time, slot.end_time)}
         </span>
       </div>

@@ -217,7 +217,7 @@ export default async function DoctorDetailPage({
                 </CardHeader>
                 <Separator />
                 <CardContent className="p-3 sm:p-4">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {daySlots.map((s) =>
                       isPatient ? (
                         <BookSlotButton

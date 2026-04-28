@@ -17,5 +17,5 @@ export function formatTime(time: string): string {
 }
 
 export function formatRange(start: string, end: string): string {
-  return `${formatTime(start)} – ${formatTime(end)}`;
+  return `${formatTime(start)} to ${formatTime(end)}`;
 }
