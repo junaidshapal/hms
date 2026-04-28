@@ -6,27 +6,43 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/empty-state";
-import { StatusBadge } from "@/components/status-badge";
-import { formatDate, formatRange } from "@/lib/format";
-import { DoctorAppointmentActions } from "./_components/doctor-actions";
+import { AppointmentRow, type AppointmentRowData } from "./_components/appointment-row";
 
 type AppointmentStatus = "pending" | "accepted" | "rejected";
 
-type Row = {
+type RawRow = {
   id: string;
   status: AppointmentStatus;
   reason: string | null;
   created_at: string;
-  doctor: { id: string; specialization: string; profile: { name: string } | null } | null;
-  patient: { name: string } | null;
-  slot: { date: string; start_time: string; end_time: string } | null;
+  doctor: { id: string; specialization: string; profile: { name: string } | { name: string }[] | null } | null;
+  patient: { name: string } | { name: string }[] | null;
+  slot: { date: string; start_time: string; end_time: string } | { date: string; start_time: string; end_time: string }[] | null;
 };
+
+function flatten(r: RawRow): AppointmentRowData {
+  const doctor = Array.isArray(r.doctor) ? r.doctor[0] : r.doctor;
+  const doctorProfile = doctor && (Array.isArray(doctor.profile) ? doctor.profile[0] : doctor.profile);
+  const patient = Array.isArray(r.patient) ? r.patient[0] : r.patient;
+  const slot = Array.isArray(r.slot) ? r.slot[0] : r.slot;
+  return {
+    id: r.id,
+    status: r.status,
+    reason: r.reason,
+    created_at: r.created_at,
+    doctorName: doctorProfile?.name ?? null,
+    doctorSpecialization: doctor?.specialization ?? null,
+    patientName: patient?.name ?? null,
+    slotDate: slot?.date ?? null,
+    slotStart: slot?.start_time ?? null,
+    slotEnd: slot?.end_time ?? null,
+  };
+}
 
 async function loadRows(opts: {
   isDoctor: boolean;
@@ -56,7 +72,7 @@ async function loadRows(opts: {
   }
 
   const { data = [] } = await query;
-  return (data ?? []) as unknown as Row[];
+  return ((data ?? []) as unknown as RawRow[]).map(flatten);
 }
 
 export default async function AppointmentsPage() {
@@ -83,8 +99,8 @@ export default async function AppointmentsPage() {
         <h1 className="mt-1 text-3xl font-semibold tracking-tight">Appointments</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {isDoctor
-            ? "Review requests and confirm visits."
-            : "Track all your booking requests."}
+            ? "Review requests and confirm visits. Click any row for details."
+            : "Track all your booking requests. Click any row for details."}
         </p>
       </header>
 
@@ -120,7 +136,7 @@ function AppointmentTable({
   isDoctor,
   status,
 }: {
-  rows: Row[];
+  rows: AppointmentRowData[];
   isDoctor: boolean;
   status: AppointmentStatus;
 }) {
@@ -138,6 +154,8 @@ function AppointmentTable({
     );
   }
 
+  const showActions = isDoctor && status === "pending";
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -147,46 +165,17 @@ function AppointmentTable({
             <TableHead>When</TableHead>
             <TableHead className="hidden sm:table-cell">Reason</TableHead>
             <TableHead>Status</TableHead>
-            {isDoctor && status === "pending" && <TableHead className="text-right">Action</TableHead>}
+            {showActions && <TableHead className="text-right">Action</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((r) => (
-            <TableRow key={r.id}>
-              <TableCell className="font-medium">
-                {isDoctor
-                  ? r.patient?.name ?? "—"
-                  : r.doctor?.profile?.name
-                  ? `Dr. ${r.doctor.profile.name}`
-                  : "—"}
-                {!isDoctor && r.doctor?.specialization && (
-                  <p className="text-xs text-muted-foreground">{r.doctor.specialization}</p>
-                )}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-sm">
-                {r.slot ? (
-                  <>
-                    <div>{formatDate(r.slot.date)}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatRange(r.slot.start_time, r.slot.end_time)}
-                    </div>
-                  </>
-                ) : (
-                  "—"
-                )}
-              </TableCell>
-              <TableCell className="hidden max-w-xs truncate text-sm text-muted-foreground sm:table-cell">
-                {r.reason ?? <span className="italic">none</span>}
-              </TableCell>
-              <TableCell>
-                <StatusBadge status={r.status} />
-              </TableCell>
-              {isDoctor && status === "pending" && (
-                <TableCell className="text-right">
-                  <DoctorAppointmentActions id={r.id} />
-                </TableCell>
-              )}
-            </TableRow>
+            <AppointmentRow
+              key={r.id}
+              data={r}
+              isDoctor={isDoctor}
+              showActions={showActions}
+            />
           ))}
         </TableBody>
       </Table>

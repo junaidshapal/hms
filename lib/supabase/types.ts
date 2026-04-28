@@ -8,17 +8,20 @@ export type Database = {
         Row: {
           id: string;
           name: string;
+          email: string;
           role: Role;
           created_at: string;
         };
         Insert: {
           id: string;
           name: string;
+          email: string;
           role: Role;
           created_at?: string;
         };
         Update: Partial<{
           name: string;
+          email: string;
           role: Role;
         }>;
         Relationships: [];

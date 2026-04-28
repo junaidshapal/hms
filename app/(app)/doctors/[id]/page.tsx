@@ -6,6 +6,7 @@ import {
   CalendarCheck2,
   CalendarX,
   Clock,
+  Mail,
   Stethoscope,
 } from "lucide-react";
 import { requireProfile } from "@/lib/auth/dal";
@@ -47,7 +48,7 @@ export default async function DoctorDetailPage({
 
   const { data: doctor } = await supabase
     .from("doctors")
-    .select("id, specialization, bio, years_experience, profile:profiles!inner(name)")
+    .select("id, specialization, bio, years_experience, profile:profiles!inner(name, email)")
     .eq("id", id)
     .maybeSingle();
 
@@ -94,7 +95,8 @@ export default async function DoctorDetailPage({
   const profileObj = Array.isArray(doctor.profile)
     ? doctor.profile[0]
     : doctor.profile;
-  const name = (profileObj as { name: string } | null)?.name ?? "Doctor";
+  const name = (profileObj as { name: string; email: string } | null)?.name ?? "Doctor";
+  const email = (profileObj as { name: string; email: string } | null)?.email ?? null;
   const isPatient = profile.role === "patient";
 
   const totalOpen = bookable.length;
@@ -132,7 +134,7 @@ export default async function DoctorDetailPage({
               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Dr. {name}
               </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
                 <Badge variant="secondary" className="capitalize">
                   <Stethoscope className="mr-1 h-3 w-3" />
                   {doctor.specialization}
@@ -142,6 +144,15 @@ export default async function DoctorDetailPage({
                     <Award className="h-3.5 w-3.5" />
                     {doctor.years_experience} yrs experience
                   </span>
+                )}
+                {email && (
+                  <a
+                    href={`mailto:${email}`}
+                    className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    {email}
+                  </a>
                 )}
               </div>
             </div>

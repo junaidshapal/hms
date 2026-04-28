@@ -15,9 +15,13 @@ create extension if not exists "pgcrypto";
 create table if not exists public.profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
   name        text not null,
+  email       text not null,
   role        text not null check (role in ('doctor', 'patient')),
   created_at  timestamptz not null default now()
 );
+
+create unique index if not exists profiles_email_unique
+  on public.profiles (lower(email));
 
 create table if not exists public.doctors (
   id                uuid primary key default gen_random_uuid(),
@@ -67,13 +71,15 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, name, role)
+  insert into public.profiles (id, name, role, email)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
-    coalesce(new.raw_user_meta_data->>'role', 'patient')
+    coalesce(new.raw_user_meta_data->>'role', 'patient'),
+    new.email
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update
+    set email = excluded.email;
   return new;
 end;
 $$;
@@ -237,14 +243,23 @@ alter table public.availability enable row level security;
 alter table public.appointments enable row level security;
 
 -- profiles: any authenticated user can read profiles of doctors (for browsing)
--- and their own row. Users may update their own profile.
+-- and their own row. Doctors can additionally read profiles of patients who
+-- booked an appointment with them (so the doctor's UI can show patient names).
 drop policy if exists "profiles read self or doctor" on public.profiles;
-create policy "profiles read self or doctor"
+drop policy if exists "profiles read self or relevant" on public.profiles;
+create policy "profiles read self or relevant"
   on public.profiles for select
   to authenticated
   using (
     auth.uid() = id
     or role = 'doctor'
+    or exists (
+      select 1
+        from public.appointments a
+        join public.doctors d on d.id = a.doctor_id
+       where a.patient_id = profiles.id
+         and d.profile_id = auth.uid()
+    )
   );
 
 drop policy if exists "profiles update self" on public.profiles;
