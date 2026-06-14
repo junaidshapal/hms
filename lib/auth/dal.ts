@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, Role } from "@/lib/supabase/types";
 
+//session storage
 export const getSessionUser = cache(async () => {
   const supabase = await createClient();
   const {
