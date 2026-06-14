@@ -27,6 +27,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   return data ?? null;
 });
 
+//register user
 export async function requireUser() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
