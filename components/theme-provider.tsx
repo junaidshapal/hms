@@ -1,4 +1,5 @@
 "use client";
+//client side file
 
 import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from "next-themes";
 
