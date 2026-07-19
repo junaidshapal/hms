@@ -1,6 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Generic placeholder shown for empty lists/tables across the app
+
 export function EmptyState({
   icon: Icon,
   title,
