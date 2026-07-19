@@ -1,5 +1,6 @@
 import * as React from "react"
 
+// Below this width (px), useIsMobile() reports true
 const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {
