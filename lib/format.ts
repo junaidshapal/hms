@@ -16,6 +16,7 @@ export function formatTime(time: string): string {
   return format(d, "h:mm a");
 }
 
+// Formats a start/end pair as "h:mm a to h:mm a"
 export function formatRange(start: string, end: string): string {
   return `${formatTime(start)} to ${formatTime(end)}`;
 }
