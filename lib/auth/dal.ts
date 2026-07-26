@@ -46,6 +46,7 @@ export async function requireRole(role: Role) {
   return profile;
 }
 
+// Looks up the doctors row linked to a given profile id
 export const getDoctorRecord = cache(async (profileId: string) => {
   const supabase = await createClient();
   const { data } = await supabase
