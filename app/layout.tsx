@@ -15,6 +15,11 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "MediBook — Hospital Management",
   description: "Book appointments with doctors. Manage availability and patient requests.",
+  openGraph: {
+    title: "MediBook — Hospital Management",
+    description: "Book appointments with doctors. Manage availability and patient requests.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
